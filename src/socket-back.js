@@ -1,27 +1,14 @@
+import { atualizaDocumento, encontrarDocumento } from "./documentosDb.js";
 import io from "./servidor.js";
-
-const documentos = [
-    {
-        nome: "JavaScript",
-        texto: "texto de javascript...",
-    },
-    {
-        nome: "Node",
-        texto: "texto de node...",
-    },
-    {
-        nome: "Socket.io",
-        texto: "texto de socket.io...",
-    },
-];
 
 io.on("connection", (socket) => {
     console.log("Cliente se conectou! ID:", socket.id);
 
-    socket.on("selecionar_documento", (nomeDocumento, devolverTexto) => {
+    socket.on("selecionar_documento", async (nomeDocumento, devolverTexto) => {
         socket.join(nomeDocumento)
         // console.log(nomeDocumento);
-        const documento = encontrarDocumento(nomeDocumento);
+        const documento = await encontrarDocumento(nomeDocumento);
+        // console.log(documento);
 
         if(documento) {
             // socket.emit("texto_documento", documento.texto);
@@ -36,22 +23,14 @@ io.on("connection", (socket) => {
     //     socket.to(nomeDocumento).emit("texto_editor_clientes", texto);
     // });
 
-    socket.on("texto_editor", ({texto, nomeDocumento}) => {
+    socket.on("texto_editor", async ({texto, nomeDocumento}) => {
         // socket.broadcast.emit("texto_editor_clientes", texto);
-        const documento = encontrarDocumento(nomeDocumento);
+        const atualizacao = await atualizaDocumento(nomeDocumento, texto);
+        console.log(atualizacao);
 
-        if(documento) {
-            documento.texto = texto;
-
+        if(atualizacao.modifiedCount) {
             socket.to(nomeDocumento).emit("texto_editor_clientes", texto);
         }
     });
 });
 
-function encontrarDocumento(nome) {
-    const documento = documentos.find((documento) => {
-        return documento.nome === nome;
-    })
-
-    return documento;
-}
